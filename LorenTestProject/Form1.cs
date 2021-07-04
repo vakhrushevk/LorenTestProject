@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SQLite;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,13 +17,10 @@ namespace LorenTestProject
         public Form1()
         {
             InitializeComponent();
-            if (!File.Exists("test.db"))
-                SQLiteConnection.CreateFile("test.db");
-            else
-            {
-                File.Delete("test.bd");
-                SQLiteConnection.CreateFile("test.db");
-            }
+            FromDateBase.dbconnect();
+            FromDateBase.dbexport();
+            var k = FromDateBase.dbimport();
+
         }
     }
 }
