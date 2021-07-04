@@ -15,6 +15,13 @@ namespace LorenTestProject
         public Form1()
         {
             InitializeComponent();
+            if (!File.Exists("test.db"))
+                SQLiteConnection.CreateFile("test.db");
+            else
+            {
+                File.Delete("test.bd");
+                SQLiteConnection.CreateFile("test.db");
+            }
         }
     }
 }
