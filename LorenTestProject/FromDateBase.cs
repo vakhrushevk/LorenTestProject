@@ -21,6 +21,40 @@ namespace LorenTestProject
                 SQLiteConnection.CreateFile("test.db");
             }
         }
+        public static Salons dbImportId(string name)
+        {
+            using (var connection = new SQLiteConnection("Data Source=test.db"))
+            {
+                connection.Open();
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT AllSalon.id, AllSalon.name,AllSalon.discount,parent_table.parentid FROM AllSalon,parent_table WHERE AllSalon.id=parent_table.idsalon AND ALLSalon.name=@name";
+                    cmd.Parameters.AddWithValue("name", name);
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                                           
+
+                        while (reader.Read())
+                        {
+                            double s;
+                            try
+                            {
+                                string discount = reader.GetString(2);
+                                s = Convert.ToDouble(discount);
+                               
+                            }
+                            catch (Exception ex)
+                            {
+                                s = reader.GetDouble(2);
+                                return new Salons(reader.GetValue(1).ToString(), s, Convert.ToBoolean(reader.GetValue(3)), reader.GetValue(4).ToString());
+
+                            }
+                        }
+                    }
+                    return null;
+                }
+            }
+        }
         // Запрос к БД с выборкой всех записей из стаблицы AllSalon возвращает список
         public static List<Salons> dbimport()
         {
@@ -87,34 +121,34 @@ namespace LorenTestProject
 
                     }
 
-
-                    for (int i = 0; i < Salons.ListSalons().Count; i++)
+                    var sl = Salons.ListSalons();
+                    for (int i = 0; i < sl.Count; i++)
                     {
-                        int list_iterator = i;
+                        int list_iterator = i+1;
                         cmd.CommandText = "insert into parent_table (idsalon,parentid) values(@idsalon,@parentid)";
 
-                        if (Salons.ListSalons()[i].name == "Амелия")
+                        if (sl[i].name == "Амелия")
                         {
-                            cmd.Parameters.AddWithValue("idsalon", list_iterator++);
+                            cmd.Parameters.AddWithValue("idsalon", list_iterator);
                             cmd.Parameters.AddWithValue("parentid", 1);
                         }
-                        else if (Salons.ListSalons()[i].name == "Тест2")
+                        else if (sl[i].name == "Тест2")
                         {
-                            cmd.Parameters.AddWithValue("idsalon", list_iterator++);
+                            cmd.Parameters.AddWithValue("idsalon", list_iterator);
                             cmd.Parameters.AddWithValue("parentid", 2);
                         }
-                        else if (Salons.ListSalons()[i].name == "Тест1")
+                        else if (sl[i].name == "Тест1")
                         {
-                            cmd.Parameters.AddWithValue("idsalon", list_iterator++);
+                            cmd.Parameters.AddWithValue("idsalon", list_iterator);
                             cmd.Parameters.AddWithValue("parentid", 3);
                             cmd.ExecuteNonQuery();
                             cmd.CommandText = "insert into parent_table (idsalon,parentid) values(@idsalon,@parentid)";
-                            cmd.Parameters.AddWithValue("idsalon", list_iterator++);
+                            cmd.Parameters.AddWithValue("idsalon", list_iterator);
                             cmd.Parameters.AddWithValue("parentid", 4);
                         }
                         else
                         {
-                            cmd.Parameters.AddWithValue("idsalon", list_iterator++);
+                            cmd.Parameters.AddWithValue("idsalon", list_iterator);
                             cmd.Parameters.AddWithValue("parentid", null);
                         }
                         cmd.ExecuteNonQuery();
