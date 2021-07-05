@@ -21,37 +21,61 @@ namespace LorenTestProject
                 SQLiteConnection.CreateFile("test.db");
             }
         }
-        public static Salons dbImportId(string name)
+        //запрос на выборку даннх discount
+        public static Salons dbImportStruct(string name)
         {
             using (var connection = new SQLiteConnection("Data Source=test.db"))
             {
                 connection.Open();
+                importSalons import=null;
                 using (var cmd = connection.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT AllSalon.id, AllSalon.name,AllSalon.discount,parent_table.parentid FROM AllSalon,parent_table WHERE AllSalon.id=parent_table.idsalon AND ALLSalon.name=@name";
+                    cmd.CommandText = "SELECT id,name,discount,discount_parent,parentid FROM AllSalon WHERE AllSalon.name = @name";
                     cmd.Parameters.AddWithValue("name", name);
                     using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
-                                           
-
-                        while (reader.Read())
+                        while (reader.Read()) 
                         {
                             double s;
                             try
                             {
                                 string discount = reader.GetString(2);
                                 s = Convert.ToDouble(discount);
-                               
+                                import = new importSalons(Convert.ToInt32(reader.GetValue(0)), reader.GetValue(1).ToString(), s, Convert.ToBoolean(reader.GetValue(3)), Convert.ToInt32(reader.GetValue(4)));
+
                             }
                             catch (Exception ex)
                             {
                                 s = reader.GetDouble(2);
-                                return new Salons(reader.GetValue(1).ToString(), s, Convert.ToBoolean(reader.GetValue(3)), reader.GetValue(4).ToString());
+                                import = new importSalons(Convert.ToInt32(reader.GetValue(0)), reader.GetValue(1).ToString(), s, Convert.ToBoolean(reader.GetValue(3)), Convert.ToInt32(reader.GetValue(4)));
 
                             }
                         }
+                        return import;
                     }
-                    return null;
+                    
+                }
+            }
+        }
+        // запрос на получения name по id из таблицы
+        public static string dbImportId(int id)
+        {
+            using (var connection = new SQLiteConnection("Data Source=test.db"))
+            {
+                string name="";
+                connection.Open();
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT name FROM AllSalon WHERE id = @id";
+                    cmd.Parameters.AddWithValue("id", id);
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            name = reader.GetString(0);
+                        }
+                        return name;
+                    }
                 }
             }
         }
@@ -79,7 +103,8 @@ namespace LorenTestProject
                             {
                                 s = reader.GetDouble(2);
                             }
-                             import_salon.Add(new Salons(reader.GetValue(1).ToString(), s, Convert.ToBoolean(reader.GetValue(3)), reader.GetValue(4).ToString()));
+                            import_salon.Add(new Salons(reader.GetValue(1).ToString(), s, Convert.ToBoolean(reader.GetValue(3)), reader.GetValue(4).ToString(),reader.GetInt32(5)));
+
                         }
                     }
                 }
@@ -100,57 +125,19 @@ namespace LorenTestProject
                                 [name] nvarchar not null,
                                 [discount] real not null,
                                 [discount_parent] bool not null,
-                                [description] nvarchar(124) not null
+                                [description] nvarchar(124) not null,
+                                [parentid] integer null
                             );";
                     cmd.ExecuteNonQuery();
-                    // Создание таблицы для связей
-                    cmd.CommandText = @"create table if not exists [parent_table](
-                                [id] integer not null primary key autoincrement,
-                                [idsalon] integer not null,
-                                [parentid] integer
-                            );";
-                    cmd.ExecuteNonQuery();
+                    
                     foreach (Salons s in Salons.ListSalons())
                     {
-                        cmd.CommandText = "insert into AllSalon (name,discount,discount_parent,description) values(@name,@discount,@discount_parent,@description)";
+                        cmd.CommandText = "insert into AllSalon (name,discount,discount_parent,description,parentid) values(@name,@discount,@discount_parent,@description,@parentid)";
                         cmd.Parameters.AddWithValue("name", $"{s.name}");
                         cmd.Parameters.AddWithValue("discount", $"{s.discount}");
                         cmd.Parameters.AddWithValue("discount_parent", $"{ s.discount_parent}");
                         cmd.Parameters.AddWithValue("description", $"{s.description}");
-                        cmd.ExecuteNonQuery();
-
-                    }
-
-                    var sl = Salons.ListSalons();
-                    for (int i = 0; i < sl.Count; i++)
-                    {
-                        int list_iterator = i+1;
-                        cmd.CommandText = "insert into parent_table (idsalon,parentid) values(@idsalon,@parentid)";
-
-                        if (sl[i].name == "Амелия")
-                        {
-                            cmd.Parameters.AddWithValue("idsalon", list_iterator);
-                            cmd.Parameters.AddWithValue("parentid", 1);
-                        }
-                        else if (sl[i].name == "Тест2")
-                        {
-                            cmd.Parameters.AddWithValue("idsalon", list_iterator);
-                            cmd.Parameters.AddWithValue("parentid", 2);
-                        }
-                        else if (sl[i].name == "Тест1")
-                        {
-                            cmd.Parameters.AddWithValue("idsalon", list_iterator);
-                            cmd.Parameters.AddWithValue("parentid", 3);
-                            cmd.ExecuteNonQuery();
-                            cmd.CommandText = "insert into parent_table (idsalon,parentid) values(@idsalon,@parentid)";
-                            cmd.Parameters.AddWithValue("idsalon", list_iterator);
-                            cmd.Parameters.AddWithValue("parentid", 4);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue("idsalon", list_iterator);
-                            cmd.Parameters.AddWithValue("parentid", null);
-                        }
+                        cmd.Parameters.AddWithValue("parentid", $"{s.parentid}");
                         cmd.ExecuteNonQuery();
                     }
                 }
