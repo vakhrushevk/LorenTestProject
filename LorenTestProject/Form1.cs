@@ -50,24 +50,38 @@ namespace LorenTestProject
             if (e.ColumnIndex == 1) { 
                 var value = dataGridView1[e.ColumnIndex, e.RowIndex].Value;
                 var name = dataGridView1[e.ColumnIndex-1, e.RowIndex].Value;
-                discount = 0;
-                dataGridView1[e.ColumnIndex+1, e.RowIndex].Value = Calc(name.ToString(), Convert.ToDouble(value));
                 
+                discount = 0;
+                
+                dataGridView1[e.ColumnIndex+1, e.RowIndex].Value = Calc(name.ToString(), Convert.ToDouble(value));
+                FromDateBase.insertToResult
+                    (
+                    name.ToString(), 
+                    FromDateBase.dbImportStruct(name.ToString()).discount, 
+                    totaldisc, 
+                    Convert.ToDouble(dataGridView1[e.ColumnIndex + 1, e.RowIndex].Value),
+                    Convert.ToDouble(value)
+                    );
+                totaldisc = "";
             }
 
         }
         double discount = 0;
+        string totaldisc = "";
         // Рекурсивный метод
         private double Calc(string name, double price)
         {
             var list = FromDateBase.dbImportStruct(name);  
             discount = discount + list.discount;
+            
             if (list.discount_parent == false)
             {
-                    return (price - (price * discount));
+                totaldisc = (discount * 100).ToString() + "%";
+                return (price - (price * discount)); 
             }
             else
             {
+                
                 return Calc(FromDateBase.dbImportId(list.parentid), price);
             }
         }

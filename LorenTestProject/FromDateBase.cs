@@ -57,6 +57,8 @@ namespace LorenTestProject
                 }
             }
         }
+
+
         // запрос на получения name по id из таблицы
         public static string dbImportId(int id)
         {
@@ -111,6 +113,26 @@ namespace LorenTestProject
             }
             return import_salon;
         }
+        public static void insertToResult(string name,double discount,string totalDiscount, double finishPrice, double price)
+        {
+            using (var connection = new SQLiteConnection("Data Source=test.db"))
+            {
+                //UPDATE Result SET Result = 99 where name = "Курган"
+
+
+                connection.Open();
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "UPDATE Result SET finishPrice = @finishPrice,price=@price,discount=@discount,totalDiscount=@totalDiscount where name = @name";
+                    cmd.Parameters.AddWithValue("name", $"{name}");
+                    cmd.Parameters.AddWithValue("price", $"{price}");
+                    cmd.Parameters.AddWithValue("discount", $"{discount}");
+                    cmd.Parameters.AddWithValue("totalDiscount", $"{totalDiscount}");
+                    cmd.Parameters.AddWithValue("finishPrice", $"{finishPrice}");
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
         // Записывает в бд данные салонов. + создает таблицы 
         public static void dbexport()
         {
@@ -129,7 +151,16 @@ namespace LorenTestProject
                                 [parentid] integer null
                             );";
                     cmd.ExecuteNonQuery();
-                    
+                    cmd.CommandText = @"create table if not exists [Result](
+                                [id] integer not null primary key autoincrement,
+                                [name] nvarchar not null,
+                                [price] real,
+                                [discount] real,
+                                [totalDiscount] nvarchar,
+                                [finishPrice] nvarchar
+                            );";
+                    cmd.ExecuteNonQuery();
+
                     foreach (Salons s in Salons.ListSalons())
                     {
                         cmd.CommandText = "insert into AllSalon (name,discount,discount_parent,description,parentid) values(@name,@discount,@discount_parent,@description,@parentid)";
@@ -138,6 +169,9 @@ namespace LorenTestProject
                         cmd.Parameters.AddWithValue("discount_parent", $"{ s.discount_parent}");
                         cmd.Parameters.AddWithValue("description", $"{s.description}");
                         cmd.Parameters.AddWithValue("parentid", $"{s.parentid}");
+                        cmd.ExecuteNonQuery();
+                        cmd.CommandText = "insert into Result (name) values (@name)";
+                        cmd.Parameters.AddWithValue("name", $"{s.name}");
                         cmd.ExecuteNonQuery();
                     }
                 }
